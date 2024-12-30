@@ -170,6 +170,26 @@ class PinEye {
     }
   }
 
+  async getReward(token, proxy) {
+    const url = `${this.baseURL}/v3/Christmas/GetReward`;
+    const urlCheck = `${this.baseURL}/v3/Christmas/Get`;
+
+    try {
+      const response = await axios.get(urlCheck, this.getAxiosConfig(token, proxy));
+
+      if (response?.data?.data?.canGetReward) {
+        const responseRw = await axios.post(url, null, this.getAxiosConfig(token, proxy));
+        if (responseRw?.data?.data?.reward) {
+          this.log(`Claim reward Christmas success | Reward ${responseRw?.data?.data?.reward}`, "success");
+        }
+      }
+      return response.data;
+    } catch (error) {
+      this.log(`Error: ${error.message}`, "error");
+      return null;
+    }
+  }
+
   async getBoosters(token, proxy) {
     const url = `${this.baseURL}/v1/Booster`;
     try {
@@ -418,7 +438,7 @@ class PinEye {
     if (!timestamp) return true;
     // Convert to milliseconds
     const dateFromTimestamp = new Date(timestamp * 1000);
-
+    dateFromTimestamp.setHours(0, 0, 0, 0);
     // Get today's date
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Set time to the start of the day
@@ -474,7 +494,7 @@ class PinEye {
 
   async handleQuest(token, proxy) {
     let quests = await this.getQuets(token, proxy);
-    let answers = require("./quest.json");
+    let answers = require("./answer.json");
     quests = quests.filter((q) => !q.isClaimed);
     answers = answers.filter((a) => a.answer);
     if (quests.length === 0 || answers.length == 0) {
@@ -487,8 +507,8 @@ class PinEye {
         await sleep(3);
         this.log(`Quest ${quest.title} completing...`);
         const res = await this.claimQuest(token, quest.id, answer.answerId, proxy);
-        if (res?.isCorrect) {
-          this.log(`Quest ${quest.title} correct! | Answer: ${answer.answer} | Reward: ${res.reward}`, "success");
+        if (res?.data?.isCorrect) {
+          this.log(`Quest ${quest.title} correct! | Answer: ${answer.answer} | Reward: ${res?.data?.reward}`, "success");
         } else {
           this.log(`Quest ${quest.title} incorrect! | Wrong answer: ${answer.answer}`, "warning");
         }
@@ -599,27 +619,36 @@ class PinEye {
             }
           }
 
+          if (settings.AUTO_CLAIM_CHRISTMAS) {
+            await this.getReward(token, proxy);
+          }
           await this.dailyReward(token, proxy);
 
           if (settings.AUTO_PRACTICE) {
+            await sleep(2);
             await this.handlePractice(token, proxy);
           }
           if (settings.DAILY_COMBO) {
+            await sleep(2);
             await this.handleDailyCombo(token);
           }
           if (hoiturbo) {
+            await sleep(2);
             await this.manageBoosters(token, totalBalance, proxy);
           }
 
           if (settings.AUTO_QUEST) {
+            await sleep(2);
             await this.handleQuest(token, proxy);
           }
 
           if (hoiPranaCards) {
+            await sleep(2);
             await this.managePranaGameCards(token, totalBalance, proxy);
           }
 
           if (settings.AUTO_TASK) {
+            await sleep(2);
             const socialTasks = await this.getSocialTasks(token, proxy);
             const unclaimedTasks = socialTasks.filter((task) => !task.isClaimed && !settings.SKIP_TASKS.includes(task.id));
             for (const task of unclaimedTasks) {
@@ -701,18 +730,17 @@ async function main() {
               if (message === "taskComplete") {
                 worker.terminate();
               }
-              if (message.error) {
-                errors.push(`Tài khoản ${message.accountIndex}: ${message.error}`);
-              }
               resolve();
             });
             worker.on("error", (error) => {
               console.log(`Lỗi worker cho tài khoản ${currentIndex + 1}: ${error.message}`);
               worker.terminate();
+              resolve();
             });
             worker.on("exit", (code) => {
               errors.push(`Worker cho tài khoản ${currentIndex + 1} thoát với mã: ${code}`);
               worker.terminate();
+              resolve();
             });
           })
         );

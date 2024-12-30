@@ -10,15 +10,21 @@ const apiData = {
   "pinai": "https://prod-api.pinai.tech",
   "hivera": "https://app.hivera.org",
   "midas": "https://api-tg-app.midas.app/api",
-  "copyright": "If the api changes, please contact the Airdrop Hunter Super Speed tele team (https://t.me/AirdropScript6) for more information and updates!| Have any issues, please contact: https://t.me/AirdropScript6"
+  "animix": "https://pro-api.animix.tech",
+  "puparty": "https://tg-puparty-h5-api.puparty.com/api",
+  "meshchain": "https://api.meshchain.ai/meshmain",
+  "wizzwoods": "https://game-api.wizzwoods.com/api/v1",
+  "uxuy": "https://miniapp.uxuy.one/rpc",
+  "sleep": "https://tgapi.sleepagotchi.com/v1/tg","copyright": "If the api changes, please contact the Airdrop Hunter Siêu Tố tele team (https://t.me/AirdropScript6) for more information and updates!| Have any issues, please contact: https://t.me/AirdropScript6"
 };
 
 async function checkBaseUrl() {
-  console.log("Checking API...".blue);
+  console.log("Checking api...".blue);
+
   if (settings.ADVANCED_ANTI_DETECTION) {
-    const result = getBaseApi(apiData);
+    const result = await getBaseApi();
     if (result.endpoint) {
-      log("No change in API!", "success");
+      log("No change in api!", "success");
       return result;
     }
   } else {
@@ -26,10 +32,15 @@ async function checkBaseUrl() {
   }
 }
 
-function getBaseApi(data) {
-  if (data?.pineye) {
-    return { endpoint: data.pineye, message: data.copyright };
-  } else {
+async function getBaseApi() {
+  try {
+    // data of fetching from a URL
+    if (apiData.pineye) {
+      return { endpoint: apiData.pineye, message: apiData.copyright };
+    } else {
+      return null;
+    }
+  } catch (e) {
     return null;
   }
 }
