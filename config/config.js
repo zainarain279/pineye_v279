@@ -18,6 +18,7 @@ const settings = {
   BASE_URL_AUTH: process.env.BASE_URL_AUTH ? process.env.BASE_URL_AUTH : null,
   ADVANCED_ANTI_DETECTION: process.env.ADVANCED_ANTI_DETECTION ? process.env.ADVANCED_ANTI_DETECTION.toLowerCase() === "true" : false,
   AUTO_PRACTICE: process.env.AUTO_PRACTICE ? process.env.AUTO_PRACTICE.toLowerCase() === "true" : false,
+  AUTO_CLAIM_CHRISTMAS: process.env.AUTO_CLAIM_CHRISTMAS ? process.env.AUTO_CLAIM_CHRISTMAS.toLowerCase() === "true" : false,
 
   AUTO_BUY_LOTTERY: process.env.AUTO_BUY_LOTTERY ? process.env.AUTO_BUY_LOTTERY.toLowerCase() === "true" : false,
   CONNECT_WALLET: process.env.CONNECT_WALLET ? process.env.CONNECT_WALLET.toLowerCase() === "true" : false,
