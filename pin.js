@@ -134,6 +134,31 @@ class PinEye {
     }
   }
 
+  async getReward(token) {
+    const url = `${this.baseURL}/v3/Christmas/GetReward`;
+    const urlCheck = `${this.baseURL}/v3/Christmas/Get`;
+
+    try {
+      const response = await axios.get(urlCheck, {
+        headers: this.customHeaders(token),
+        timeout: 10000,
+      });
+      if (response?.data?.data?.canGetReward) {
+        const responseRw = await axios.post(url, null, {
+          headers: this.customHeaders(token),
+          timeout: 10000,
+        });
+        if (responseRw?.data?.data?.reward) {
+          this.log(`Claim reward Christmas success | Reward ${responseRw?.data?.data?.reward}`, "success");
+        }
+      }
+      return response.data;
+    } catch (error) {
+      this.log(`Error: ${error.message}`, "error");
+      return null;
+    }
+  }
+
   async getBoosters(token) {
     const url = `${this.baseURL}/v1/Booster`;
     try {
@@ -165,17 +190,13 @@ class PinEye {
   async claimQuest(token, questId, answerId) {
     const url = `${this.baseURL}/v3/academies/${questId}/claim?answerId=${answerId}`;
     try {
-      const response = await axios.post(
-        url,
-        {},
-        {
-          headers: this.customHeaders(token),
-          timeout: 10000,
-        }
-      );
+      const response = await axios.post(url, null, {
+        headers: this.customHeaders(token),
+        timeout: 10000,
+      });
       return response.data;
     } catch (error) {
-      this.log(`Do not claim quest ${questId}: ${error.message}`, "error");
+      this.log(`Cannot claim quest ${questId}: ${error.message}`, "error");
       return null;
     }
   }
@@ -201,7 +222,7 @@ class PinEye {
   async manageBoosters(token, balance) {
     const boostersData = await this.getBoosters(token);
     if (!boostersData || !boostersData.data) {
-      this.log("Cannot get boosts data!", "error");
+      this.log("Unable to get data boosts!", "error");
       return;
     }
 
@@ -211,7 +232,7 @@ class PinEye {
 
         const result = await this.buyBooster(token, booster.id);
         if (result && !result.errors) {
-          this.log(`Upgrade ${booster.title} successful. Balance remaining: ${result.data.balance}`, "success");
+          this.log(`Upgrade ${booster.title} success. Balance also: ${result.data.balance}`, "success");
           balance = result.data.balance;
         } else {
           this.log(`Cannot buy ${booster.title}.`, "warning");
@@ -331,7 +352,7 @@ class PinEye {
           }
         );
         const { code, balance } = buyResponse.data.data;
-        this.log(`Successfully purchased lottery tickets ${code} | Balance còn: ${balance}`, "custom");
+        this.log(`Successfully purchased lottery tickets ${code} | Balance still: ${balance}`, "custom");
       } else {
         this.log(`You have bought a lottery ticket: ${ticket.code}`, "warning");
       }
@@ -376,11 +397,11 @@ class PinEye {
         this.log(`Mission successful`, "success");
         return response.data.data;
       } else {
-        this.log(`Unable to complete task ${id} | ${title} : need to do it manually or not qualified`, "warning");
+        this.log(`Unable to complete the task ${id} | ${title} : need to do by hand or not qualified`, "warning");
         return null;
       }
     } catch (error) {
-      if (error.status == 400) this.log(`Unable to complete task ${id} | ${title} : need to do it manually or not qualified`, "warning");
+      if (error.status == 400) this.log(`Unable to complete the task ${id} | ${title} : need to do by hand or not qualified`, "warning");
       else this.log(`Error: Unable to complete the task ${id} | ${title} : ${error.message}`, "error");
       return null;
     }
@@ -395,7 +416,7 @@ class PinEye {
       });
       return response.data.data;
     } catch (error) {
-      this.log(`Unable to get tag list: ${error.message}`, "error");
+      this.log(`Unable to get card list: ${error.message}`, "error");
       return null;
     }
   }
@@ -480,7 +501,7 @@ class PinEye {
       });
       return response.data.data;
     } catch (error) {
-      this.log(`Cannot claim Pratice: ${error.message}`, "error");
+      this.log(`Cannot claim Practice: ${error.message}`, "error");
       return null;
     }
   }
@@ -489,12 +510,11 @@ class PinEye {
     if (!timestamp) return true;
     // Convert to milliseconds
     const dateFromTimestamp = new Date(timestamp * 1000);
-
+    dateFromTimestamp.setHours(0, 0, 0, 0);
     // Get today's date
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Set time to the start of the day
 
-    // Check if the date from timestamp is today
     return dateFromTimestamp.getTime() === today.getTime();
   }
 
@@ -521,7 +541,7 @@ class PinEye {
 
   async handleQuest(token) {
     let quests = await this.getQuets(token);
-    let answers = require("./quest.json");
+    let answers = require("./answer.json");
     quests = quests.filter((q) => !q.isClaimed);
     answers = answers.filter((a) => a.answer);
     if (quests.length === 0 || answers.length == 0) {
@@ -534,8 +554,8 @@ class PinEye {
         await sleep(3);
         this.log(`Quest ${quest.title} completing...`);
         const res = await this.claimQuest(token, quest.id, answer.answerId);
-        if (res?.isCorrect) {
-          this.log(`Quest ${quest.title} correct! | Answer: ${answer.answer} | Reward: ${res.reward}`, "success");
+        if (res?.data?.isCorrect) {
+          this.log(`Quest ${quest.title} correct! | Answer: ${answer.answer} | Reward: ${res?.data?.reward}`, "success");
         } else {
           this.log(`Quest ${quest.title} incorrect! | Wrong answer: ${answer.answer}`, "warning");
         }
@@ -599,7 +619,7 @@ class PinEye {
         const purchaseResult = await this.purchasePranaGameCard(token, card);
         if (purchaseResult && purchaseResult.data && purchaseResult.data.isSuccess) {
           balance = purchaseResult.data.balance;
-          this.log(`Upgraded card "${card.title}" successfully | Profit: ${card.profit} | Balance still: ${balance}`, "success");
+          this.log(`Upgraded card "${card.title}" successfully | Profit: ${card.profit} | Balance remaining: ${balance}`, "success");
         }
       }
     }
@@ -640,6 +660,7 @@ async main() {
     console.log(`${message}`.yellow);
     if (!baseURL) return console.log(`API ID not found, try again later!`.red);
     this.baseURL = baseURL;
+    // process.exit(0);
 
     while (true) {
       for (let i = 0; i < data.length; i++) {
@@ -665,7 +686,7 @@ async main() {
             this.log(`Balance: ${totalBalance}`, "success");
             this.log(`Lv: ${level}`, "success");
             this.log(`Earn Per Tap: ${earnPerTap}`, "success");
-            this.log(`Năng lượng: ${currentEnergy} / ${maxEnergy}`, "success");
+            this.log(`Energy: ${currentEnergy} / ${maxEnergy}`, "success");
 
             if (currentEnergy > 0) {
               await this.tapEnergy(token, currentEnergy);
@@ -673,6 +694,10 @@ async main() {
               if (updatedProfile && updatedProfile.data) {
                 totalBalance = updatedProfile.data.profile.totalBalance;
               }
+            }
+
+            if (settings.AUTO_CLAIM_CHRISTMAS) {
+              await this.getReward(token);
             }
 
             await this.dailyReward(token);
